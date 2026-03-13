@@ -16,11 +16,12 @@ public class TransactionDetails {
     private BigDecimal amount;
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
-    private LocalDateTime transactionTime;
+    private LocalDateTime transactionTime =LocalDateTime.now();
     private String referenceNumber;
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 

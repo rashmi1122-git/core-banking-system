@@ -44,9 +44,9 @@ public class CustomerServiceImple implements CustomerService{
         customerRepository.save(customer);
         CustomerResponseDTO responseDTO = new CustomerResponseDTO();
         responseDTO.setCustomerId(customer.getCustomerId());
-        //responseDTO.setEmail(customer.getEmail());
+        responseDTO.setEmail(customer.getEmail());
         responseDTO.setName(customer.getName());
-        //responseDTO.setPhone(customer.getPhone());
+        responseDTO.setKycStatus(customer.getKycStatus());
         responseDTO.setMessage("Customer Onboard successfully");
         return responseDTO;
     }
@@ -61,10 +61,6 @@ public class CustomerServiceImple implements CustomerService{
            responseDTO.setCustomerId(customer1.getCustomerId());
            responseDTO.setName(customer1.getName());
            responseDTO.setEmail(customer1.getEmail());
-           responseDTO.setPhone(customer1.getPhone());
-           responseDTO.setPanNumber(customer1.getPanNumber());
-           responseDTO.setAddress(customer1.getAddress());
-           responseDTO.setAadhaarNumber(customer1.getAadhaarNumber());
            responseDTO.setKycStatus(customer1.getKycStatus());
            list.add(responseDTO);
        }
@@ -90,10 +86,9 @@ public class CustomerServiceImple implements CustomerService{
        // customer.setKycStatus(KycStatus.PENDING);
         customerRepository.save(customer);
         CustomerResponseDTO responseDTO = new CustomerResponseDTO();
-        responseDTO.setPhone(customer.getPhone());
         responseDTO.setName(customer.getName());
         responseDTO.setEmail(customer.getEmail());
-       // responseDTO.setKycStatus(customer.getKycStatus());
+        responseDTO.setKycStatus(customer.getKycStatus());
         return responseDTO;
     }
 }

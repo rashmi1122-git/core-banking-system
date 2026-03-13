@@ -12,10 +12,16 @@ public class TransactionMapper {
     public TransactionDetails mapToEntity(TransactionRequestDTO dto, Account account) {
 
         TransactionDetails tx = new TransactionDetails();
-       // tx.setTransactionType(dto.getType());
+        if ("DEBIT".equalsIgnoreCase(dto.getType()))
+        {
+            tx.setTransactionType(TransactionType.DEBIT);
+        }else
+        {
+            tx.setTransactionType(TransactionType.CREDIT);
+        }
         tx.setAmount(dto.getAmount());
-//        tx.setTransactionDate(LocalDateTime.now());
-//        tx.setAccount(account);
+        tx.setAccountNumber(dto.getAccountNumber());
+        tx.setAccount(account);
         return tx;
     }
 
@@ -24,10 +30,10 @@ public class TransactionMapper {
 
         TransactionResponseDTO response = new TransactionResponseDTO();
 
-       // response.setTransactionId("TXN-" + tx.getTxnId());
+        response.setTransactionId("TXN-" + tx.getTransactionId());
         response.setStatus("SUCCESS");
         response.setMessage("Transaction completed successfully");
-       // response.setAccountNumber(tx.getAccount().getAccountNumber());
+        response.setAccountNumber(tx.getAccount().getAccountNumber());
         response.setAvailableBalance(balance);
         response.setTimestamp(LocalDateTime.now());
 

@@ -44,7 +44,7 @@ public class TransactionServiceImple implements TransactionService{
            }
            newBalance=account.getBalance().subtract(request.getAmount());
        }
-       account.setBalance(newBalance);
+        account.setBalance(newBalance);
         TransactionDetails details =mapper.mapToEntity(request,account);
         transactionDetailsRepository.save(details);
         return mapper.mapToDTO(details, newBalance);
@@ -60,96 +60,110 @@ public class TransactionServiceImple implements TransactionService{
         TransactionDetails details = new TransactionDetails();
         DepositResponseDTO responseDTO = new DepositResponseDTO();
         details.setTransactionType(TransactionType.CREDIT);
-        details.setTransactionTime(LocalDateTime.now());
         details.setAmount(request.getAmount());
+        details.setAccountNumber(request.getAccountNumber());
         details.setReferenceNumber(UUID.randomUUID().toString());
         responseDTO.setTransactionDate(LocalDateTime.now());
         try {
-             Account account = accountRepository.findByAccountNumber(request.getAccountNumber()).orElseThrow(()->new IllegalArgumentException("Account Not Found"));
+             Account account = accountRepository.findByAccountNumber(request.getAccountNumber()).orElseThrow(()->new DublicateCustomerException("Account Not Found"));
              if (!account.getStatus().equals(AccountStatus.ACTIVE))
              {
                  throw new RuntimeException("Account is not active");
              }
-             if (account.getStatus() !=AccountStatus.ACTIVE)
-             {
-             throw  new DublicateCustomerException("Account is not Active");
-             }
+//             if (account.getStatus() !=AccountStatus.ACTIVE)
+//             {
+//             throw  new DublicateCustomerException("Account is not Active");
+//             }
              account.setBalance(account.getBalance().add(request.getAmount()));
+             details.setAccount(account);
+
              details.setStatus(TransactionStatus.SUCCESS);
             responseDTO.setMessage("Amount Deposit Successfully");
             responseDTO.setNewBalance(account.getBalance());
             transactionDetailsRepository.save(details);
         }catch (Exception  e)
              {
-             responseDTO.setMessage("Amount Deposit Failed Transaction");
-             details.setStatus(TransactionStatus.FAILED);
-             transactionDetailsRepository.save(details);
-                 throw e;
-         }
+                 details.setStatus(TransactionStatus.FAILED);
+                 responseDTO.setMessage("Amount Deposit Failed Transaction");
+
+                 if (details.getAccount()!=null)
+                 {
+                     transactionDetailsRepository.save(details);
+                 }
+                  throw e;
+             }
         return responseDTO;
     }
 
     @Override
     @Transactional
     public DepositResponseDTO withdraw(DepositRequestDTO requestDTO) {
-        TransactionDetails transaction= new TransactionDetails();
+
+        DepositResponseDTO dto = new DepositResponseDTO();
+
+        Account account = accountRepository
+                .findByAccountNumber(requestDTO.getAccountNumber())
+                .orElseThrow(() -> new DublicateCustomerException("Account not found"));
+
+        if (account.getBalance().compareTo(requestDTO.getAmount()) < 0) {
+            throw new DublicateCustomerException("Insufficient Balance");
+        }
+
+        // update balance
+        account.setBalance(account.getBalance().subtract(requestDTO.getAmount()));
+
+        TransactionDetails transaction = new TransactionDetails();
+        transaction.setAccount(account);
         transaction.setAccountNumber(requestDTO.getAccountNumber());
         transaction.setAmount(requestDTO.getAmount());
         transaction.setTransactionType(TransactionType.DEBIT);
         transaction.setTransactionTime(LocalDateTime.now());
         transaction.setReferenceNumber(UUID.randomUUID().toString());
-        try {
-            Account account = accountRepository
-                    .findByAccountNumberForUpdate(requestDTO.getAccountNumber())
-                    .orElseThrow(() -> new RuntimeException("Account not found"));
+        transaction.setStatus(TransactionStatus.SUCCESS);
 
-            account.setBalance(account.getBalance().subtract(requestDTO.getAmount()));
-            transaction.setStatus(TransactionStatus.SUCCESS);
-            transactionDetailsRepository.save(transaction);
-        } catch (Exception ex) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            transactionDetailsRepository.save(transaction);
-            throw ex; // rethrow exception
-        }
-        return null;
+        transactionDetailsRepository.save(transaction);
+
+        dto.setMessage("Withdraw Success");
+        dto.setNewBalance(account.getBalance());
+
+        return dto;
     }
-
     @Override
+    @Transactional
     public String transfer(TransferRequestDTO1 dto1) {
 
-        Account sender = accountRepository.findByAccountNumberForUpdate(dto1.getFromAccount()).orElseThrow(()->new IllegalArgumentException("Account No Found Of Sender"));
-        Account receiver=accountRepository.findByAccountNumberForUpdate(dto1.getToAccount()).orElseThrow(()->new IllegalArgumentException("Receiver Account Not Found"));
+        Account sender = accountRepository.findByAccountNumber(dto1.getFromAccount()).orElseThrow(()->new DublicateCustomerException("Account No Found Of Sender"));
+        Account receiver=accountRepository.findByAccountNumber(dto1.getToAccount()).orElseThrow(()->new DublicateCustomerException("Receiver Account Not Found"));
+
         if (sender.getBalance().compareTo(dto1.getAmount())<0)
         {
             throw new RuntimeException("Insufficient Balance");
         }
-        sender.setBalance(sender.getBalance().subtract(dto1.getAmount()));
-        receiver.setBalance(receiver.getBalance().add(dto1.getAmount()));
-          if (!sender.getStatus().equals("ACTIVE") || receiver.getStatus().equals("ACTIVE"))
-          {
-              throw new RuntimeException("Account is not active");
-          }
-        String reference = UUID.randomUUID().toString();
+        if (sender.getStatus() != AccountStatus.ACTIVE|| receiver.getStatus() !=AccountStatus.ACTIVE)
+        {
+            throw new DublicateCustomerException("Account is not active");
+        }
+         String reference = UUID.randomUUID().toString();
+
           sender.setBalance(sender.getBalance().subtract(dto1.getAmount()));
           receiver.setBalance(receiver.getBalance().add(dto1.getAmount()));
-           accountRepository.save(sender);
-           accountRepository.save(receiver);
 
           TransactionDetails credit = new TransactionDetails();
            credit.setAmount(dto1.getAmount());
            credit.setTransactionType(TransactionType.CREDIT);
            credit.setReferenceNumber(reference);
            credit.setTransactionTime(LocalDateTime.now());
+            credit.setAccount(receiver);
 
            TransactionDetails debit = new TransactionDetails();
            debit.setTransactionType(TransactionType.DEBIT);
            debit.setAmount(dto1.getAmount());
            debit.setReferenceNumber(reference);
            debit.setTransactionTime(LocalDateTime.now());
+           debit.setAccount(sender);
           transactionDetailsRepository.save(credit);
           transactionDetailsRepository.save(debit);
           return "Transfer Successful";
-
     }
 
 }

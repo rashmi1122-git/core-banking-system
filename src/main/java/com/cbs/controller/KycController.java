@@ -9,8 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/bank/kyc")
+@RequestMapping("/api/bank/kyc")
 public class KycController {
+
     private KycService kycService;
     public KycController(KycService kycService) {
         this.kycService = kycService;
