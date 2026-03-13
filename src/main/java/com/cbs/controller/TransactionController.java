@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/bank")
+@RequestMapping("/api/bank/transaction")
 public class TransactionController {
 
     private TransactionService service;

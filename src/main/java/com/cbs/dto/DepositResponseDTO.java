@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 public class DepositResponseDTO {
     private String message;
     private BigDecimal newBalance;
-    private LocalDateTime transactionDate;
+    private LocalDateTime transactionDate =LocalDateTime.now();
 
     public String getMessage() {
         return message;
